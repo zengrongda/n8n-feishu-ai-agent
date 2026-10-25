@@ -29,8 +29,8 @@
    - 深度攻克 OAuth 2.0 双重身份鉴权（`tenant_access_token` 应用身份 vs `user_access_token` 用户身份）。
    - 解决了飞书开放平台常见的 `403 Forbidden` 及 `99991679` 权限拦截问题。
 
-4. **原生 JavaScript 数据清洗算法**
-   - **时间戳处理**：手写算法 `Math.floor((Math.floor(Date.now()/1000) + 28800) / 86400) * 86400 - 28800`，完美解决 UTC 与东八区（UTC+8）的偏差，精准计算出“今天 0 点”的 Unix 时间戳。
+4. **AI辅助 JavaScript 数据清洗算法**
+   - **时间戳处理**：ai辅助算法 `Math.floor((Math.floor(Date.now()/1000) + 28800) / 86400) * 86400 - 28800`，完美解决 UTC 与东八区（UTC+8）的偏差，精准计算出“今天 0 点”的 Unix 时间戳。
    - **数据剥离**：使用 `JSON.stringify($json.output).slice(1, -1)` 清除 LLM 输出的多余转义字符，确保适配飞书 Markdown 卡片渲染规范。
 
 ## 🔧 如何运行此项目？
