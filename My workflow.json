@@ -1,0 +1,200 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -480,
+        -128
+      ],
+      "id": "15cfd1fa-2cf9-4c55-bead-8158b73894a2",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是一位拥有极高效率的“首席个人助理”。你的核心任务是基于用户提供的【日历日程】和【实时新闻】，为用户生成一份结构清晰、重点突出的“每日规划简报”。\n\n【核心工作原则】\n1. 日程优先：优先梳理日程中的时间冲突或紧迫任务，确保用户不错过重要会议。\n2. 新闻提炼：从海量新闻中筛选出与用户日程或所处行业强相关的信息（如果新闻与日程无关，请提炼全局宏观动向）。\n3. 行动规划：结合日程的忙碌程度，给出劳逸结合的合理建议。\n\n【输出格式要求（极其重要）】\n你输出的内容将直接被放入飞书消息卡片中，因此必须严格遵循以下 Markdown 格式，且**绝对不要输出任何多余的解释性文字、不要包含 ```json 或 ```markdown 等代码块符号**：\n\n📅 **今日日程重点**\n- [时间 1]：[日程主题]（如果日程密集，请提示时间冲突风险）\n- [时间 2]：[日程主题]\n\n📰 **今日必看情报**\n- [新闻标题 1]：[一句话提炼核心影响或与你工作的关联]\n- [新闻标题 2]：[一句话提炼]\n\n💡 **首席助理行动建议**\n[给出 1-2 条结合日程和新闻的针对性建议。例如：“今天下午有三个连续会议，建议提前准备好午餐或咖啡。同时，新闻提到XX行业政策变化，建议在下午的会议中重点关注。”]",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -176,
+        -48
+      ],
+      "id": "91f73e68-500a-479e-b0d4-156b4196abe8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        160
+      ],
+      "id": "61d9416c-2df1-46f3-8273-3866dbd241ab",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "YOUR_DEEPSEEK_CREDENTIAL_ID",
+          "name": "DeepSeek account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "YOUR_BITABLE_APP_TOKEN",
+        "table_id": "YOUR_TABLE_ID",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"or\",\n    \"conditions\": [\n      {\n        \"field_name\": \"创建时间\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      },\n      {\n        \"field_name\": \"创建时间\",\n        \"operator\": \"is\",\n        \"value\": [\"Yesterday\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNodeTool",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        256
+      ],
+      "id": "ab898fe1-d074-4ba3-bd06-db07db03c31f",
+      "name": "Bitable:table:record:search bitable in Feishu Node",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "YOUR_FEISHU_CREDENTIAL_ID",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "operation": "calendar:listEvents",
+        "calendar_id": "YOUR_CALENDAR_ID@group.calendar.feishu.cn",
+        "start_time": "={{ (Math.floor((Math.floor(Date.now()/1000) + 28800) / 86400) * 86400 - 28800) }}",
+        "end_time": "={{ (Math.floor((Math.floor(Date.now()/1000) + 28800) / 86400) * 86400 - 28800) + 604800 + 86399 }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNodeTool",
+      "typeVersion": 1,
+      "position": [
+        64,
+        256
+      ],
+      "id": "294bfd47-957d-4093-9b00-8f1477db79f0",
+      "name": "Calendar:listEvents calendar in Feishu Node",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "YOUR_FEISHU_CREDENTIAL_ID",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://open.feishu.cn/open-apis/bot/v2/hook/YOUR_WEBHOOK_TOKEN_HERE",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"msg_type\": \"interactive\",\n  \"card\": {\n    \"schema\": \"2.0\",\n    \"config\": {\n      \"update_multi\": true,\n      \"style\": {\n        \"text_size\": {\n          \"normal_v2\": {\n            \"default\": \"normal\",\n            \"pc\": \"normal\",\n            \"mobile\": \"heading\"\n          }\n        }\n      }\n    },\n    \"header\": {\n      \"title\": {\n        \"tag\": \"plain_text\",\n        \"content\": \"智能体回复\"\n      },\n      \"template\": \"blue\"\n    },\n    \"body\": {\n      \"direction\": \"vertical\",\n      \"padding\": \"12px 12px 12px 12px\",\n      \"elements\": [\n        {\n          \"tag\": \"markdown\",\n          \"content\": \"{{ $json.output ? JSON.stringify($json.output).slice(1, -1) : '' }}\",\n          \"text_align\": \"left\",\n          \"text_size\": \"normal_v2\",\n          \"margin\": \"0px 0px 0px 0px\"\n        }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        192,
+        -48
+      ],
+      "id": "2846a3bb-cc08-45ab-b91c-dc2508199d03",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bitable:table:record:search bitable in Feishu Node": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar:listEvents calendar in Feishu Node": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0f87677a-c4e8-486b-99b7-ca0b49dbdae0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4aa382f1abc26b88c45228a1fef2a8c63aafa0bcdbe6f588e8620f7561a94f48"
+  },
+  "nodeGroups": [],
+  "id": "y9pMHWhmjjsgePIv",
+  "tags": []
+}
